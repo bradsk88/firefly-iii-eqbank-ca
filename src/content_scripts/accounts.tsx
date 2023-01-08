@@ -1,8 +1,5 @@
 import {AccountStore} from "firefly-iii-typescript-sdk-fetch/dist/models";
 
-// TODO: You will need to update manifest.json so this file will be loaded on
-//  the correct URL.
-
 function scrapeAccountsFromPage(): AccountStore[] {
     // TODO: This is where you implement the scraper to pull the individual
     //  accounts from the page
@@ -11,7 +8,7 @@ function scrapeAccountsFromPage(): AccountStore[] {
 
 window.addEventListener("load",function(event) {
     const button = document.createElement("button");
-    button.textContent = "Export Accounts"
+    button.textContent = "Export accounts to Firefly III"
     button.addEventListener("click", () => {
         const accounts = scrapeAccountsFromPage();
         chrome.runtime.sendMessage(
@@ -23,7 +20,20 @@ window.addEventListener("load",function(event) {
         );
     }, false);
 
-    // TODO: This is where you add a "scrape" button to the page where all the
-    //  bank accounts are listed.
-    document.body.append(button);
+    button.style.background = 'rgb(255, 205, 41)';
+    button.style.border = 'none';
+    button.style.padding = '8px';
+    button.style.borderRadius = '4px';
+    button.style.fontWeight = '600';
+    button.style.width = '253px';
+
+    const housing = document.createElement("div")
+    housing.style.textAlign = "end";
+    housing.style.width = "100%";
+    housing.style.marginBlock = "-37px";
+    housing.append(button)
+
+    setTimeout(() => {
+        document.querySelector('ul.actions')!.append(housing);
+    }, 2000); // TODO: A smarter way of handling render delay
 });
