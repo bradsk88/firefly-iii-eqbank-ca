@@ -1,6 +1,4 @@
-import {AccountStore} from "firefly-iii-typescript-sdk-fetch/dist/models";
 import {OpeningBalance} from "../background";
-import {TransactionTypeProperty} from "firefly-iii-typescript-sdk-fetch";
 import {monthIndexes} from "../common/dates";
 import {PageAccount} from "../common/accounts";
 import {priceFromString} from "../common/prices";
