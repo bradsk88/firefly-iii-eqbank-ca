@@ -3,9 +3,11 @@ import {
     AccountStore,
     ShortAccountTypeProperty
 } from "firefly-iii-typescript-sdk-fetch/dist/models";
+import {addButtonOnURLMatch} from "../common/buttons";
+import {priceFromString} from "../common/prices";
 
 const knownAccountsWithoutNumbers: {[key: string]: string} = {
-    'TFSA GICs': 'all_tfsa_gics',
+    'TFSA GICs': 'tfsa_all_gics',
     'TFSA Savings Account': 'tfsa_savings',
 }
 
@@ -24,11 +26,21 @@ function scrapeAccountsFromPage(): AccountStore[] {
             if (!accountNumber) {
                 accountNumber = knownAccountsWithoutNumbers[name];
             }
+
+            let openingBalance, openingDate;
+            if (accountNumber === 'tfsa_all_gics') {
+                const txt = row.querySelector('dl.ml-auto dd')!.textContent!.trim()
+                openingBalance = priceFromString(txt);
+                openingDate = new Date();
+            }
+
             return {
                 name: `${name} (EQ Bank)`,
                 type: ShortAccountTypeProperty.Asset,
                 accountNumber: accountNumber,
                 accountRole: AccountRoleProperty.SavingAsset, // TODO: Infer this from the page headers
+                openingBalance: `${openingBalance}`,
+                openingBalanceDate: openingDate,
             };
         }
     )
@@ -40,8 +52,11 @@ function expandAll(): void {
     )
 }
 
-window.addEventListener("load", function (event) {
+const buttonId = 'firefly-iii-export-accounts-button';
+
+function buildButton() {
     const button = document.createElement("button");
+    button.id = buttonId;
     button.textContent = "Export accounts to Firefly III"
     button.addEventListener("click", () => {
         const accounts = scrapeAccountsFromPage();
@@ -67,8 +82,16 @@ window.addEventListener("load", function (event) {
     housing.style.width = "100%";
     // housing.style.marginBlock = "-37px";
     housing.append(button)
+    return housing;
+}
 
-    setTimeout(() => {
-        document.querySelector('ul.actions')!.append(housing);
-    }, 2000); // TODO: A smarter way of handling render delay
-});
+function addButton(): void {
+    const button = buildButton();
+    document.querySelector('ul.actions')!.append(button);
+}
+
+addButtonOnURLMatch(
+    '/dashboard',
+    () => !!document.getElementById(buttonId),
+    () => addButton(),
+)
