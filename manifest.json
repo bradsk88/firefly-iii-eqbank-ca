@@ -5,8 +5,7 @@
   "permissions": [
     "identity",
     "clipboardWrite",
-    "storage",
-    "webNavigation"
+    "storage"
   ],
   "options_page": "options.html",
   "host_permissions": [
@@ -18,7 +17,7 @@
   "content_scripts": [
     {
       "matches": ["https://secure.eqbank.ca/*"],
-      "js": ["./dist/accounts.js", "./dist/transactions.js", "./dist/opening.js"]
+      "js": ["./dist/accounts.js", "./dist/transactions.js", "./dist/opening.js", "./dist/auto.js"]
     }
   ],
   "icons": {

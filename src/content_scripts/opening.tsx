@@ -1,7 +1,7 @@
-import {OpeningBalance} from "../background";
 import {monthIndexes} from "../common/dates";
 import {PageAccount} from "../common/accounts";
 import {priceFromString} from "../common/prices";
+import {OpeningBalance} from "../background/firefly_export";
 
 export function scrapeOpeningBalanceFromPage(
     account: PageAccount,

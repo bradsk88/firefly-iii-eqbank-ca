@@ -3,53 +3,38 @@ import {
     AccountStore,
     ShortAccountTypeProperty
 } from "firefly-iii-typescript-sdk-fetch/dist/models";
-import {addButtonOnURLMatch} from "../common/buttons";
-import {priceFromString} from "../common/prices";
+import {AutoRunState} from "../background/auto_state";
+import {getAccountElements, getAccountName, getAccountNumber, getOpeningBalance} from "./scrape/accounts";
+import {openAccountForAutoRun} from "./auto_run/accounts";
+import {runOnURLMatch} from "../common/buttons";
 
-const knownAccountsWithoutNumbers: {[key: string]: string} = {
-    'TFSA GICs': 'tfsa_all_gics',
-    'TFSA Savings Account': 'tfsa_savings',
-}
-
-function scrapeAccountsFromPage(): AccountStore[] {
-    expandAll();
-    return Array.from(document.querySelectorAll('li.account.accordion-item').values()).map(
-        row => {
-            let infoSection = row.querySelector('.account__details');
-            let accountNumber = infoSection!.id?.replace('-account', '')?.trim();
-            let nameSection = infoSection!.querySelector('span.account__details-name');
-            let accountName = nameSection?.textContent?.trim();
-            if  (!accountName) {
-                accountName = infoSection!.textContent!;
-            }
-            let name = accountName.trim();
-            if (!accountNumber) {
-                accountNumber = knownAccountsWithoutNumbers[name];
-            }
-
-            let openingBalance, openingDate;
-            if (accountNumber === 'tfsa_all_gics') {
-                const txt = row.querySelector('dl.ml-auto dd')!.textContent!.trim()
-                openingBalance = priceFromString(txt);
-                openingDate = new Date();
-            }
-
-            return {
-                name: `${name} (EQ Bank)`,
-                type: ShortAccountTypeProperty.Asset,
-                accountNumber: accountNumber,
-                accountRole: AccountRoleProperty.SavingAsset, // TODO: Infer this from the page headers
-                openingBalance: `${openingBalance}`,
-                openingBalanceDate: openingDate,
-            };
+async function scrapeAccountsFromPage(): Promise<AccountStore[]> {
+    const accounts = getAccountElements().map(element => {
+        const accountNumber = getAccountNumber(element)
+        const accountName = getAccountName(element);
+        const openingBalance = getOpeningBalance(element);
+        const as: AccountStore = {
+            // iban: "12345", // Not all banks have an IBAN
+            // bic: "123", // Not all banks have an BIC
+            name: `${accountName} (EQ Bank)`,
+            accountNumber: accountNumber,
+            type: ShortAccountTypeProperty.Asset,
+            accountRole: AccountRoleProperty.SavingAsset, // TODO: Infer this from the page headers
+            currencyCode: "CAD",
+            openingBalance: `${openingBalance?.balance}`,
+            openingBalanceDate: openingBalance?.date,
+        };
+        return as;
+    });
+    chrome.runtime.sendMessage(
+        {
+            action: "store_accounts",
+            value: accounts,
+        },
+        () => {
         }
-    )
-}
-
-function expandAll(): void {
-    document.querySelectorAll('button.accordion-item[aria-expanded=false]').forEach(
-        e => (e as HTMLButtonElement).click()
-    )
+    );
+    return accounts;
 }
 
 const buttonId = 'firefly-iii-export-accounts-button';
@@ -58,17 +43,7 @@ function buildButton() {
     const button = document.createElement("button");
     button.id = buttonId;
     button.textContent = "Export accounts to Firefly III"
-    button.addEventListener("click", () => {
-        const accounts = scrapeAccountsFromPage();
-        chrome.runtime.sendMessage(
-            {
-                action: "store_accounts",
-                value: accounts,
-            },
-            () => {
-            }
-        );
-    }, false);
+    button.addEventListener("click", () => scrapeAccountsFromPage(), false);
 
     button.style.background = 'rgb(255, 205, 41)';
     button.style.border = 'none';
@@ -85,13 +60,34 @@ function buildButton() {
     return housing;
 }
 
-function addButton(): void {
+function addButton() {
     const button = buildButton();
+    button.addEventListener("click", () => scrapeAccountsFromPage(), false);
     document.querySelector('ul.actions')!.append(button);
 }
 
-addButtonOnURLMatch(
+function enableAutoRun() {
+    // This code is for executing the auto-run functionality for the hub extension
+    // More Info: https://github.com/bradsk88/firefly-iii-chrome-extension-hub
+    chrome.runtime.sendMessage({
+        action: "get_auto_run_state",
+    }).then(state => {
+        if (state === AutoRunState.Accounts) {
+            scrapeAccountsFromPage()
+                .then(() => chrome.runtime.sendMessage({
+                    action: "complete_auto_run_state",
+                    state: AutoRunState.Accounts,
+                }));
+        } else if (state === AutoRunState.Transactions) {
+            openAccountForAutoRun();
+        }
+    });
+}
+
+runOnURLMatch(
     '/dashboard',
     () => !!document.getElementById(buttonId),
-    () => addButton(),
-)
+    () => {
+        addButton();
+        enableAutoRun();
+    });

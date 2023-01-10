@@ -1,62 +1,40 @@
-import {TransactionStore, TransactionTypeProperty} from "firefly-iii-typescript-sdk-fetch";
-import {AccountRead} from "firefly-iii-typescript-sdk-fetch/dist/models/AccountRead";
-import {addButtonOnURLMatch} from "../common/buttons";
-import {monthIndexes} from "../common/dates";
-import {priceFromString} from "../common/prices";
-import {scrapeOpeningBalanceFromPage} from "./opening";
+import {TransactionStore} from "firefly-iii-typescript-sdk-fetch";
+import {runOnURLMatch} from "../common/buttons";
+import {AutoRunState} from "../background/auto_state";
+import {getCurrentPageAccount, scrapeTransactionsFromPage} from "./scrape/transactions";
 import {PageAccount} from "../common/accounts";
+import {scrapeOpeningBalanceFromPage} from "./opening";
 
-/**
- * @param accounts The first page of account in your Firefly III instance
- */
-async function getCurrentPageAccount(
-    accounts: AccountRead[],
-): Promise<PageAccount> {
-    const accountNumberSpan = document.querySelector("span.account-details__id");
-    const accountNumber = accountNumberSpan!.textContent!.replaceAll('-', '', );
-    let acct = accounts.find(
-        acct => acct.attributes.accountNumber === accountNumber,
-    )!;
-    return {
-        id: acct.id,
-        name: acct.attributes.name,
-    };
+interface TransactionScrape {
+    pageAccount: PageAccount;
+    pageTransactions: TransactionStore[];
 }
 
-/**
- * @param pageAccountId The Firefly III account ID for the current page
- */
-function scrapeTransactionsFromPage(
-    pageAccountId: string,
-): TransactionStore[] {
-    const table = document.querySelector("table.eq-table");
-    const rows = Array.from(table!.querySelectorAll('tbody tr').values())
-    return rows.map(
-        row => {
-            const cols = row.getElementsByTagName('td');
-            const [date, month, year] = cols.item(0)!.textContent!.split(' ');
-            const [amountIn, amountOut] = [cols.item(2)!.textContent, cols.item(3)!.textContent]
-            const tType = amountIn ? TransactionTypeProperty.Deposit : TransactionTypeProperty.Withdrawal;
-            const description = cols.item(1)!.textContent!.trim();
-            const sourceId = tType === TransactionTypeProperty.Withdrawal ? pageAccountId : undefined;
-            const destId = tType === TransactionTypeProperty.Deposit ? pageAccountId : undefined;
-
-            return {
-                transactions: [{
-                    type: tType,
-                    date: new Date(
-                        Number.parseInt(year.trim()),
-                        monthIndexes[month.toLowerCase()],
-                        Number.parseInt(date),
-                    ),
-                    amount: `${Math.abs(priceFromString((amountIn || amountOut)!))}`,
-                    description: description,
-                    sourceId: sourceId,
-                    destinationId: destId,
-                }]
-            };
+async function doScrape(): Promise<TransactionScrape> {
+    const accounts = await chrome.runtime.sendMessage({
+        action: "list_accounts",
+    });
+    const id = await getCurrentPageAccount(accounts);
+    const txs = await scrapeTransactionsFromPage(id.id);
+    chrome.runtime.sendMessage({
+            action: "store_transactions",
+            value: txs,
+        },
+        () => {
+        });
+    const openingBalance = scrapeOpeningBalanceFromPage(id)
+    chrome.runtime.sendMessage(
+        {
+            action: "store_opening",
+            value: openingBalance,
+        },
+        () => {
         }
     )
+    return {
+        pageAccount: id,
+        pageTransactions: txs,
+    };
 }
 
 const buttonId = 'firefly-iii-export-transactions-button';
@@ -69,39 +47,34 @@ function addButton() {
 
     const button = document.createElement("button");
     button.textContent = "Export to Firefly III"
-    button.addEventListener("click", async () => {
-        const accounts = await chrome.runtime.sendMessage({
-            action: "list_accounts",
-        });
-        const id = await getCurrentPageAccount(accounts);
-        const transactions = scrapeTransactionsFromPage(id.id);
-        chrome.runtime.sendMessage(
-            {
-                action: "store_transactions",
-                value: transactions,
-            },
-            () => {
-            }
-        );
-        const openingBalance = scrapeOpeningBalanceFromPage(id)
-        chrome.runtime.sendMessage(
-            {
-                action: "store_opening",
-                value: openingBalance,
-            },
-            () => {
-            }
-        );
-    }, false);
+    button.addEventListener("click", async () => doScrape(), false);
 
     button.classList.add('more-menu__main-btn', 'custom-button', 'secondary');
     target.prepend(button)
 }
 
+function enableAutoRun() {
+    chrome.runtime.sendMessage({
+        action: "get_auto_run_state",
+    }).then(state => {
+        if (state === AutoRunState.Transactions) {
+            doScrape()
+                .then((id: TransactionScrape) => chrome.runtime.sendMessage({
+                    action: "increment_auto_run_tx_account",
+                    lastAccountNameCompleted: id.pageAccount.name,
+                }, () => {
+                }));
+        }
+    });
+}
+
 // If your manifest.json allows your content script to run on multiple pages,
 // you can call this function more than once, or set the urlPath to "".
-addButtonOnURLMatch(
+runOnURLMatch(
     'accounts/main/details',
     () => !!document.getElementById(buttonId),
-    () => addButton(),
+    () => {
+        addButton();
+        enableAutoRun();
+    },
 )
