@@ -4,6 +4,7 @@ import {AutoRunState} from "../background/auto_state";
 import {getCurrentPageAccount, scrapeTransactionsFromPage} from "./scrape/transactions";
 import {PageAccount} from "../common/accounts";
 import {scrapeOpeningBalanceFromPage} from "./opening";
+import {backToAccountsForAutoRun} from "./auto_run/transactions";
 
 interface TransactionScrape {
     pageAccount: PageAccount;
@@ -63,7 +64,8 @@ function enableAutoRun() {
                     action: "increment_auto_run_tx_account",
                     lastAccountNameCompleted: id.pageAccount.name,
                 }, () => {
-                }));
+                }))
+                .then(() => backToAccountsForAutoRun());
         }
     });
 }

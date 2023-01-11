@@ -8,15 +8,15 @@ const loginUrl = 'https://secure.eqbank.ca/dashboard';
 export async function progressAutoRun(state = AutoRunState.Accounts) {
     await setAutoRunState(state)
     if (openedWindow) {
-        chrome.tabs.remove(openedWindow.id!)
+        // chrome.tabs.remove(openedWindow.id!)
     }
     if (state === AutoRunState.Done) {
         return;
     }
-    openedWindow = await chrome.tabs.create({
-        url: loginUrl,
-        active: false,
-    })
+    // openedWindow = await chrome.tabs.create({
+    //     url: loginUrl,
+    //     active: false,
+    // })
 }
 
 async function setAutoRunState(s: AutoRunState): Promise<void> {

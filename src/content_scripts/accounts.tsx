@@ -6,10 +6,15 @@ import {
 import {AutoRunState} from "../background/auto_state";
 import {getAccountElements, getAccountName, getAccountNumber, getOpeningBalance} from "./scrape/accounts";
 import {openAccountForAutoRun} from "./auto_run/accounts";
-import {runOnURLMatch} from "../common/buttons";
+import {runOnContentChange, runOnURLMatch} from "../common/buttons";
 
 async function scrapeAccountsFromPage(): Promise<AccountStore[]> {
-    const accounts = getAccountElements().map(element => {
+    const accountElements = getAccountElements();
+    if (accountElements?.length === 0) {
+        throw new Error('Page is not ready for scrape. Will try again on next draw.');
+    }
+    autoRunStartedFor = AutoRunState.Accounts;
+    const accounts = accountElements.map(element => {
         const accountNumber = getAccountNumber(element)
         const accountName = getAccountName(element);
         const openingBalance = getOpeningBalance(element);
@@ -60,10 +65,12 @@ function buildButton() {
     return housing;
 }
 
-function addButton() {
+function addButton(): boolean {
     const button = buildButton();
     button.addEventListener("click", () => scrapeAccountsFromPage(), false);
-    document.querySelector('ul.actions')!.append(button);
+    const target = document.querySelector('ul.actions');
+    target?.append(button);
+    return !!target;
 }
 
 function enableAutoRun() {
@@ -72,22 +79,33 @@ function enableAutoRun() {
     chrome.runtime.sendMessage({
         action: "get_auto_run_state",
     }).then(state => {
+        if (autoRunStartedFor === state) {
+            return
+        }
         if (state === AutoRunState.Accounts) {
             scrapeAccountsFromPage()
                 .then(() => chrome.runtime.sendMessage({
                     action: "complete_auto_run_state",
                     state: AutoRunState.Accounts,
-                }));
+                }))
+                .catch(err => console.log(err));
         } else if (state === AutoRunState.Transactions) {
             openAccountForAutoRun();
         }
     });
 }
 
+let autoRunStartedFor: AutoRunState;
+
 runOnURLMatch(
     '/dashboard',
     () => !!document.getElementById(buttonId),
     () => {
         addButton();
-        enableAutoRun();
-    });
+    },
+);
+
+runOnContentChange(
+    '/dashboard',
+    enableAutoRun,
+);
