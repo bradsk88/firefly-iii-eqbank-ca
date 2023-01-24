@@ -15,9 +15,6 @@ import {openAccountForAutoRun} from "./auto_run/accounts";
 import {runOnURLMatch} from "../common/buttons";
 import {runOnContentChange} from "../common/autorun";
 
-// TODO: You will need to update manifest.json so this file will be loaded on
-//  the correct URL.
-
 let pageAlreadyScraped = false;
 
 async function scrapeAccountsFromPage(isAutoRun: boolean): Promise<AccountStore[]> {
@@ -29,15 +26,11 @@ async function scrapeAccountsFromPage(isAutoRun: boolean): Promise<AccountStore[
         const accountNumber = getAccountNumber(element)
         const accountName = getAccountName(element);
         const openingBalance = getOpeningBalance(element);
-        // TODO: Double-check these values. You may need to update them based
-        //  on the account element or bank.
         let openingBalanceBalance: string | undefined;
         if (openingBalance) {
-            openingBalanceBalance = `-${openingBalance.balance}`;
+            openingBalanceBalance = `${openingBalance.balance}`;
         }
         const as: AccountStore = {
-            // iban: "12345", // Not all banks have an IBAN
-            // bic: "123", // Not all banks have an BIC
             name: accountName,
             accountNumber: accountNumber,
             openingBalance: openingBalanceBalance,
@@ -68,7 +61,21 @@ function addButton() {
     button.id = buttonId;
     button.textContent = "Export Accounts"
     button.addEventListener("click", () => scrapeAccountsFromPage(false), false);
-    getButtonDestination().append(button);
+
+    button.style.background = 'rgb(255, 205, 41)';
+    button.style.border = 'none';
+    button.style.padding = '8px';
+    button.style.borderRadius = '4px';
+    button.style.fontWeight = '600';
+    button.style.width = '253px';
+
+    const housing = document.createElement("div")
+    housing.style.textAlign = "end";
+    housing.style.width = "100%";
+    // housing.style.marginBlock = "-37px";
+    housing.append(button)
+
+    getButtonDestination().append(housing);
 }
 
 function enableAutoRun() {
@@ -90,7 +97,7 @@ function enableAutoRun() {
     });
 }
 
-const accountsUrl = 'accounts/main/details'; // TODO: Set this to your accounts page URL
+const accountsUrl = 'dashboard';
 
 runOnURLMatch(accountsUrl, () => pageAlreadyScraped = false);
 

@@ -1,7 +1,7 @@
 {
-  "name": "My Firefly III OAuth2 Extension",
+  "name": "EQBank -> Firefly III",
   "version": "1.0",
-  "description": "Description goes here",
+  "description": "Scrapes account and transaction data from EQ Bank (Canada) into Firefly III",
   "permissions": [
     "storage",
     "tabs"
@@ -20,11 +20,11 @@
       "js": ["./dist/auto.js"]
     },
     {
-      "matches": ["https://*.example.com/*"],
+      "matches": ["https://secure.eqbank.ca/*"],
       "js": ["./dist/accounts.js"]
     },
     {
-      "matches": ["https://*.example.com/*"],
+      "matches": ["https://secure.eqbank.ca/*"],
       "js": ["./dist/transactions.js"]
     },
     {
@@ -34,6 +34,9 @@
   ],
   "action": {
     "default_popup": "options.html"
+  },
+  "icons": {
+    "128": "logo-128.png"
   },
   "manifest_version": 3
 }

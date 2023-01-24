@@ -13,9 +13,6 @@ import {runOnContentChange} from "../common/autorun";
 import {AccountRead} from "firefly-iii-typescript-sdk-fetch/dist/models/AccountRead";
 import {isSingleAccountBank} from "../extensionid";
 
-// TODO: You will need to update manifest.json so this file will be loaded on
-//  the correct URL.
-
 interface TransactionScrape {
     pageAccount: PageAccount;
     pageTransactions: TransactionStore[];
@@ -31,15 +28,15 @@ export function scrapeTransactionsFromPage(
 ): TransactionStore[] {
     const rows = getRowElements();
     return rows.map(r => {
-        let tType = TransactionTypeProperty.Withdrawal;
-        let srcId: string | undefined = pageAccount.id;
-        let destId: string | undefined = undefined;
+        let tType = TransactionTypeProperty.Deposit;
+        let srcId: string | undefined = undefined;
+        let destId: string | undefined = pageAccount.id;
 
         const amount = getRowAmount(r);
         if (amount < 0) {
-            tType = TransactionTypeProperty.Deposit;
-            srcId = undefined;
-            destId = pageAccount.id;
+            tType = TransactionTypeProperty.Withdrawal;
+            srcId = pageAccount.id;
+            destId = undefined;
         }
 
         return {
@@ -97,8 +94,7 @@ function addButton() {
     button.id = buttonId;
     button.textContent = "Export Transactions"
     button.addEventListener("click", async () => doScrape(false), false);
-    // TODO: Try to steal styling from the page to make this look good :)
-    button.classList.add("some", "classes", "from", "the", "page");
+    button.classList.add('more-menu__main-btn', 'custom-button', 'secondary');
     getButtonDestination().append(button);
 }
 
@@ -125,7 +121,6 @@ function enableAutoRun() {
     });
 }
 
-// TODO: Set this to your transactions page URL
 const txPage = 'accounts/main/details';
 
 runOnURLMatch(txPage, () => pageAlreadyScraped = false);
@@ -140,7 +135,7 @@ runOnContentChange(
         }
         addButton();
     },
-    getButtonDestination,
+    () => document.querySelector('td.date-column')!,
 )
 
 runOnContentChange(txPage, enableAutoRun);
