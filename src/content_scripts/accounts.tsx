@@ -116,5 +116,5 @@ runOnContentChange(
 runOnContentChange(
     accountsUrl,
     enableAutoRun,
-    () => getAccountElements()[0]
+    () => document.querySelector('h3#accounts-title')!
 )

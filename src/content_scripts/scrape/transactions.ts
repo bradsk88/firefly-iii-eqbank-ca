@@ -20,6 +20,11 @@ export async function getCurrentPageAccount(
 }
 
 export function getRowElements(): Element[] {
+    const empty = document.querySelector('tr.empty-message');
+    if (empty) {
+        return [];
+    }
+
     const table = document.querySelector("table.eq-table");
     return Array.from(table!.querySelectorAll('tbody tr').values())
 }
@@ -53,4 +58,8 @@ export function getRowAmount(r: Element): number {
 export function getRowDesc(r: Element): string {
     const cols = r.getElementsByTagName('td');
     return cols.item(1)!.textContent!.trim();
+}
+
+export function findBackToAccountsPageButton(): HTMLElement {
+    return document.querySelector('a#dashboard[href="/dashboard"]')!;
 }

@@ -23,9 +23,7 @@ function findNextAccountElement(accountName: string): Element | undefined {
 function navigateToAccount(
     accountElement: Element,
 ): void {
-    // TODO: In order to scrape transactions, we need to navigate to
-    //  each account. This template assumes it's a button you can "click".
-    (accountElement as HTMLButtonElement)?.click()
+    (accountElement as HTMLElement)?.click()
 }
 
 export function openAccountForAutoRun() {
