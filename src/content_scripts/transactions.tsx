@@ -136,7 +136,7 @@ runOnContentChange(
         }
         addButton();
     },
-    () => document.querySelector('td.date-column')!,
+    getButtonDestination,
 )
 
 runOnContentChange(txPage, enableAutoRun, () => document.querySelector('app-account-transactions')!);
