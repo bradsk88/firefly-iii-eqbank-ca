@@ -112,9 +112,11 @@ runOnContentChange(
     getButtonDestination,
 )
 
-
 runOnContentChange(
     accountsUrl,
-    enableAutoRun,
-    () => document.querySelector('h3#accounts-title')!
+    () => {
+        if (getAccountElements()[0]) {
+            enableAutoRun();
+        }
+    },
 )
