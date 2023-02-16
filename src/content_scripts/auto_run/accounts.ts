@@ -50,7 +50,7 @@ export function openAccountForAutoRun() {
                 navigateToAccount(accountElement);
                 return;
             }
-            if (isSingleAccountBank) {
+            if (isSingleAccountBank || !accountElement) {
                 chrome.runtime.sendMessage({
                     action: "complete_auto_run_state",
                     state: AutoRunState.Transactions,

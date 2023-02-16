@@ -9,7 +9,7 @@ import {
     getAccountName,
     getAccountNumber,
     getButtonDestination,
-    getOpeningBalance
+    getOpeningBalance, isPageReadyForScraping
 } from "./scrape/accounts";
 import {openAccountForAutoRun} from "./auto_run/accounts";
 import {runOnURLMatch} from "../common/buttons";
@@ -91,8 +91,12 @@ function addButton() {
 function enableAutoRun() {
     // This code is for executing the auto-run functionality for the hub extension
     // More Info: https://github.com/bradsk88/firefly-iii-chrome-extension-hub
-
     debugLog('in enableAutoRun')
+    if (!isPageReadyForScraping()) {
+        debugLog("Page is not ready for account scraping")
+        return;
+    }
+
     chrome.runtime.sendMessage({
         action: "get_auto_run_state",
     }).then(state => {

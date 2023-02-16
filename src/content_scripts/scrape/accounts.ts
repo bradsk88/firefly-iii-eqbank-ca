@@ -18,6 +18,10 @@ const knownAccountsWithoutNumbers: {[key: string]: string} = {
     'TFSA Savings Account': 'tfsa_savings',
 }
 
+export function isPageReadyForScraping(): boolean {
+    return !!document.querySelector('span.account__details-number');
+}
+
 export function getAccountElements(): Element[] {
     expandAll();
     return Array.from(document.querySelectorAll('li.account.accordion-item').values());
