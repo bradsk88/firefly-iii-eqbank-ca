@@ -33,17 +33,6 @@ const backgroundLog = (string: string): void => {
     });
 }
 
-chrome.runtime.onMessageExternal.addListener(function (msg) {
-    console.log('message', msg);
-    if (msg.action === "login") {
-        return chrome.storage.local.set({
-            "ffiii_bearer_token": msg.token,
-            "ffiii_api_base_url": msg.api_base_url,
-        }, () => {
-        });
-    }
-});
-
 function registerSelfWithHubExtension() {
     console.log('registering self');
     chrome.runtime.sendMessage(hubExtensionId, {
@@ -63,8 +52,15 @@ chrome.runtime.onStartup.addListener(function () {
 setTimeout(registerSelfWithHubExtension, 1000);
 setTimeout(registerSelfWithHubExtension, 5000);
 
-chrome.runtime.onMessageExternal.addListener(function (msg) {
+chrome.runtime.onMessageExternal.addListener((msg: any, _: any, sendResponse: Function) => {
     console.log('message', msg);
+    if (msg.action === "login") {
+        return chrome.storage.local.set({
+            "ffiii_bearer_token": msg.token,
+            "ffiii_api_base_url": msg.api_base_url,
+        }, () => {
+        });
+    }
     if (msg.action === "request_auto_run") {
         chrome.permissions.getAll(async perms => {
             await setAutoRunState(AutoRunState.Accounts);
@@ -75,7 +71,18 @@ chrome.runtime.onMessageExternal.addListener(function (msg) {
             }
         })
     }
-});
+    if (msg.action === 'cancel_auto_run') {
+        chrome.permissions.getAll(async perms => {
+            await setAutoRunState(AutoRunState.Unstarted);
+        })
+    }
+    if (msg.action === 'get_auto_run_state') {
+        getAutoRunState().then(state => sendResponse({
+            state: state,
+        }))
+    }
+})
+
 
 async function storeAccounts(data: AccountStore[]) {
     getBearerToken().then(token => doStoreAccounts(token, data))

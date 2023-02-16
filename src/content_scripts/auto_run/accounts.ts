@@ -1,5 +1,5 @@
 import {AutoRunState} from "../../background/auto_state";
-import {getAccountElements, getAccountName, getAccountNumber, shouldSkipScrape} from "../scrape/accounts";
+import {getAccountElements, getAccountName, shouldSkipScrape} from "../scrape/accounts";
 import {debugAutoRun, isSingleAccountBank} from "../../extensionid";
 import {debugHighlight, showDebug} from "./debug";
 import {navigating, setNavigating} from "../accounts";

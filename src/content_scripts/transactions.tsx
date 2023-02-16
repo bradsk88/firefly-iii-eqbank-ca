@@ -56,7 +56,6 @@ export function scrapeTransactionsFromPage(
 }
 
 async function doScrape(isAutoRun: boolean): Promise<TransactionScrape> {
-    // TODO: Mutex?
     if (isAutoRun && pageAlreadyScraped) {
         throw new Error("Already scraped. Stopping.");
     }
@@ -135,17 +134,17 @@ runOnURLMatch(txPage, () => pageAlreadyScraped = false);
 
 // If your manifest.json allows your content script to run on multiple pages,
 // you can call this function more than once, or set the urlPath to "".
-// runOnContentChange(
-//     txPage,
-//     () => {
-//         if (!!document.getElementById(buttonId)) {
-//             return;
-//         }
-//         addButton();
-//     },
-//     () => document.querySelector('td.date-column')!,
-//     'txButton'
-// )
+runOnContentChange(
+    txPage,
+    () => {
+        if (!!document.getElementById(buttonId)) {
+            return;
+        }
+        addButton();
+    },
+    getButtonDestination,
+)
+
 
 runOnContentChange(
     txPage,

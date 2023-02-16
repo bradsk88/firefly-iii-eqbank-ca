@@ -125,16 +125,17 @@ runOnURLMatch(accountsUrl, () => {
     navigating = false;
 });
 
-// runOnContentChange(
-//     accountsUrl,
-//     () => {
-//         if (!!document.getElementById(buttonId)) {
-//             return;
-//         }
-//         addButton();
-//     },
-//     getButtonDestination,
-// )
+runOnContentChange(
+    accountsUrl,
+    () => {
+        if (!!document.getElementById(buttonId)) {
+            return;
+        }
+        addButton();
+    },
+    getButtonDestination,
+)
+
 
 runOnContentChange(
     accountsUrl,
