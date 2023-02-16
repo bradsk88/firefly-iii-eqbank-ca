@@ -5,7 +5,7 @@ import {
     getCurrentPageAccount,
     getRowAmount,
     getRowDate, getRowDesc,
-    getRowElements
+    getRowElements, isPageReadyForScraping
 } from "./scrape/transactions";
 import {PageAccount} from "../common/accounts";
 import {runOnURLMatch} from "../common/buttons";
@@ -13,6 +13,7 @@ import {runOnContentChange} from "../common/autorun";
 import {AccountRead} from "firefly-iii-typescript-sdk-fetch/dist/models/AccountRead";
 import {isSingleAccountBank} from "../extensionid";
 import {backToAccountsPage} from "./auto_run/transactions";
+import {debugLog} from "./auto_run/debug";
 
 interface TransactionScrape {
     pageAccount: PageAccount;
@@ -55,6 +56,7 @@ export function scrapeTransactionsFromPage(
 }
 
 async function doScrape(isAutoRun: boolean): Promise<TransactionScrape> {
+    // TODO: Mutex?
     if (isAutoRun && pageAlreadyScraped) {
         throw new Error("Already scraped. Stopping.");
     }
@@ -100,9 +102,14 @@ function addButton() {
 }
 
 function enableAutoRun() {
+    if (!isPageReadyForScraping()) {
+        debugLog("Page is not ready for scraping")
+        return;
+    }
     chrome.runtime.sendMessage({
         action: "get_auto_run_state",
     }).then(state => {
+        debugLog("Got state", state)
         if (state === AutoRunState.Transactions) {
             doScrape(true)
                 .then((id: TransactionScrape) => {
@@ -128,15 +135,21 @@ runOnURLMatch(txPage, () => pageAlreadyScraped = false);
 
 // If your manifest.json allows your content script to run on multiple pages,
 // you can call this function more than once, or set the urlPath to "".
+// runOnContentChange(
+//     txPage,
+//     () => {
+//         if (!!document.getElementById(buttonId)) {
+//             return;
+//         }
+//         addButton();
+//     },
+//     () => document.querySelector('td.date-column')!,
+//     'txButton'
+// )
+
 runOnContentChange(
     txPage,
-    () => {
-        if (!!document.getElementById(buttonId)) {
-            return;
-        }
-        addButton();
-    },
-    () => document.querySelector('td.date-column')!,
-)
-
-runOnContentChange(txPage, enableAutoRun, () => document.querySelector('app-account-transactions')!);
+    enableAutoRun,
+    () => document.querySelector('app-root')!,
+    'txAutoRun',
+);

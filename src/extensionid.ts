@@ -1,3 +1,4 @@
+export const debugAutoRun = false;
 export const bankDomain = 'eqbank.ca';
 export const autoRunStartURL = 'https://secure.eqbank.ca/dashboard';
 export const extensionPrimaryColorHex = '000000';

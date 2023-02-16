@@ -33,23 +33,20 @@ const backgroundLog = (string: string): void => {
     });
 }
 
-chrome.runtime.onConnectExternal.addListener(function (port) {
-    port.onMessage.addListener(function (msg) {
-        console.log('message', msg);
-        if (msg.action === "login") {
-            return chrome.storage.local.set({
-                "ffiii_bearer_token": msg.token,
-                "ffiii_api_base_url": msg.api_base_url,
-            }, () => {
-            });
-        }
-    });
+chrome.runtime.onMessageExternal.addListener(function (msg) {
+    console.log('message', msg);
+    if (msg.action === "login") {
+        return chrome.storage.local.set({
+            "ffiii_bearer_token": msg.token,
+            "ffiii_api_base_url": msg.api_base_url,
+        }, () => {
+        });
+    }
 });
 
 function registerSelfWithHubExtension() {
     console.log('registering self');
-    const port = chrome.runtime.connect(hubExtensionId);
-    port.postMessage({
+    chrome.runtime.sendMessage(hubExtensionId, {
         action: "register",
         extension: chrome.runtime.id,
         name: extensionBankName,
@@ -66,20 +63,18 @@ chrome.runtime.onStartup.addListener(function () {
 setTimeout(registerSelfWithHubExtension, 1000);
 setTimeout(registerSelfWithHubExtension, 5000);
 
-chrome.runtime.onConnectExternal.addListener(function (port) {
-    port.onMessage.addListener(function (msg) {
-        console.log('message', msg);
-        if (msg.action === "request_auto_run") {
-            chrome.permissions.getAll(async perms => {
-                await setAutoRunState(AutoRunState.Accounts);
-                if ((perms.origins?.filter(o => !o.includes(bankDomain)) || []).length > 0) {
-                    await progressAutoRun();
-                } else {
-                    chrome.runtime.openOptionsPage();
-                }
-            })
-        }
-    });
+chrome.runtime.onMessageExternal.addListener(function (msg) {
+    console.log('message', msg);
+    if (msg.action === "request_auto_run") {
+        chrome.permissions.getAll(async perms => {
+            await setAutoRunState(AutoRunState.Accounts);
+            if ((perms.origins?.filter(o => !o.includes(bankDomain)) || []).length > 0) {
+                await progressAutoRun();
+            } else {
+                chrome.runtime.openOptionsPage();
+            }
+        })
+    }
 });
 
 async function storeAccounts(data: AccountStore[]) {

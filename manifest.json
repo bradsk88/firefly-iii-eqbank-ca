@@ -3,8 +3,7 @@
   "version": "1.0",
   "description": "Scrapes account and transaction data from EQ Bank (Canada) into Firefly III",
   "permissions": [
-    "storage",
-    "tabs"
+    "storage"
   ],
   "options_page": "options.html",
   "optional_host_permissions": [
@@ -17,7 +16,7 @@
   "content_scripts": [
     {
       "matches": ["https://secure.eqbank.ca/*"],
-      "js": ["./dist/accounts.js", "./dist/transactions.js", "./dist/auto.js"]
+      "js": ["./dist/accounts.js", "./dist/transactions.js"]
     }
   ],
   "action": {

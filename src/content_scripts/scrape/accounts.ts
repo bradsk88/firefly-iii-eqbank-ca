@@ -27,6 +27,10 @@ function getInfoSection(accountElement: Element) {
     return accountElement.querySelector('.account__details');
 }
 
+export function shouldSkipScrape(accountElement: Element): boolean {
+    return Object.values(knownAccountsWithoutNumbers).includes(getAccountNumber(accountElement));
+}
+
 export function getAccountNumber(
     accountElement: Element,
 ): string {

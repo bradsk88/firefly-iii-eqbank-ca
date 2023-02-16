@@ -19,6 +19,10 @@ export async function getCurrentPageAccount(
     )!;
 }
 
+export function isPageReadyForScraping(): boolean {
+    return !!document.querySelector('app-account-transactions')
+}
+
 export function getRowElements(): Element[] {
     const empty = document.querySelector('tr.empty-message');
     if (empty) {

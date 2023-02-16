@@ -14,15 +14,25 @@ import {
 import {openAccountForAutoRun} from "./auto_run/accounts";
 import {runOnURLMatch} from "../common/buttons";
 import {runOnContentChange} from "../common/autorun";
+import {debugLog} from "./auto_run/debug";
 
 let pageAlreadyScraped = false;
+export let navigating = false;
+
+export function setNavigating(): void {
+    navigating = true;
+}
 
 async function scrapeAccountsFromPage(isAutoRun: boolean): Promise<AccountStore[]> {
     if (isAutoRun && pageAlreadyScraped) {
         throw new Error("Already scraped. Stopping.");
     }
 
-    const accounts = getAccountElements().map(element => {
+    const accountElements = getAccountElements();
+    if (accountElements?.length === 0) {
+        throw new Error("Accounts are not present yet.")
+    }
+    const accounts = accountElements.map(element => {
         const accountNumber = getAccountNumber(element)
         const accountName = getAccountName(element);
         const openingBalance = getOpeningBalance(element);
@@ -81,16 +91,23 @@ function addButton() {
 function enableAutoRun() {
     // This code is for executing the auto-run functionality for the hub extension
     // More Info: https://github.com/bradsk88/firefly-iii-chrome-extension-hub
+
+    debugLog('in enableAutoRun')
     chrome.runtime.sendMessage({
         action: "get_auto_run_state",
     }).then(state => {
+        debugLog("Got state", state)
         if (state === AutoRunState.Accounts) {
+            debugLog('scraping page for accounts');
             scrapeAccountsFromPage(true)
                 .then(() => chrome.runtime.sendMessage({
                     action: "complete_auto_run_state",
                     state: AutoRunState.Accounts,
                 }))
-                .then(() => openAccountForAutoRun());
+                .then(() => openAccountForAutoRun())
+                .catch(() => {
+                    console.log('Error from account scrape. Will try again on next redraw')
+                });
         } else if (state === AutoRunState.Transactions) {
             openAccountForAutoRun();
         }
@@ -99,22 +116,25 @@ function enableAutoRun() {
 
 const accountsUrl = 'dashboard';
 
-runOnURLMatch(accountsUrl, () => pageAlreadyScraped = false);
+runOnURLMatch(accountsUrl, () => {
+    pageAlreadyScraped = false;
+    navigating = false;
+});
 
-runOnContentChange(
-    accountsUrl,
-    () => {
-        if (!!document.getElementById(buttonId)) {
-            return;
-        }
-        addButton();
-    },
-    getButtonDestination,
-)
-
+// runOnContentChange(
+//     accountsUrl,
+//     () => {
+//         if (!!document.getElementById(buttonId)) {
+//             return;
+//         }
+//         addButton();
+//     },
+//     getButtonDestination,
+// )
 
 runOnContentChange(
     accountsUrl,
     enableAutoRun,
-    () => document.querySelector('h3#accounts-title')!
+    () => document.querySelector('app-root')!,
+    'accounts',
 )

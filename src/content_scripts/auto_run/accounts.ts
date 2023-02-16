@@ -1,6 +1,8 @@
 import {AutoRunState} from "../../background/auto_state";
-import {getAccountElements, getAccountName} from "../scrape/accounts";
-import {isSingleAccountBank} from "../../extensionid";
+import {getAccountElements, getAccountName, getAccountNumber, shouldSkipScrape} from "../scrape/accounts";
+import {debugAutoRun, isSingleAccountBank} from "../../extensionid";
+import {debugHighlight, showDebug} from "./debug";
+import {navigating, setNavigating} from "../accounts";
 
 function findNextAccountElement(accountName: string): Element | undefined {
     // You probably shouldn't need to modify the function.
@@ -8,6 +10,9 @@ function findNextAccountElement(accountName: string): Element | undefined {
     // AFTER the last account whose transactions were scraped.
     let foundScraped = false;
     for (const button of getAccountElements()) {
+        if (shouldSkipScrape(button)) {
+            continue;
+        }
         if (!accountName) {
             return button;
         }
@@ -23,10 +28,20 @@ function findNextAccountElement(accountName: string): Element | undefined {
 function navigateToAccount(
     accountElement: Element,
 ): void {
-    (accountElement as HTMLElement)?.click()
+    if (debugAutoRun) {
+        showDebug("Auto-run would click on the highlighted element. But debug mode is on." +
+            "<br>Click it yourself to continue the auto-run procedure.");
+        debugHighlight((accountElement as HTMLElement));
+    } else {
+        (accountElement as HTMLElement)?.click()
+        setNavigating();
+    }
 }
 
 export function openAccountForAutoRun() {
+    if (navigating) {
+        return;
+    }
     // Be careful changing this function. The auto run orchestration is fragile.
     chrome.runtime.sendMessage({action: "get_auto_run_tx_last_account"})
         .then(account => findNextAccountElement(account))
@@ -36,11 +51,10 @@ export function openAccountForAutoRun() {
                 return;
             }
             if (isSingleAccountBank) {
-                return;
+                chrome.runtime.sendMessage({
+                    action: "complete_auto_run_state",
+                    state: AutoRunState.Transactions,
+                });
             }
-            chrome.runtime.sendMessage({
-                action: "complete_auto_run_state",
-                state: AutoRunState.Transactions,
-            });
         });
 }
