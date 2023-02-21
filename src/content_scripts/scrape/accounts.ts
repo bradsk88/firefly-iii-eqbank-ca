@@ -22,12 +22,6 @@ export function isPageReadyForScraping(): boolean {
     return !!document.querySelector('span.account__details-number');
 }
 
-export function isPageReadyForScraping(): boolean {
-    // TODO: Some banks load accounts in slowly. Find a DOM element that is
-    //  only present on the page once the accounts are fully loaded.
-    return !!document.querySelector('span.account__details-number');
-}
-
 export function getAccountElements(): Element[] {
     expandAll();
     return Array.from(document.querySelectorAll('li.account.accordion-item').values());
@@ -39,12 +33,6 @@ function getInfoSection(accountElement: Element) {
 
 export function shouldSkipScrape(accountElement: Element): boolean {
     return Object.values(knownAccountsWithoutNumbers).includes(getAccountNumber(accountElement));
-}
-
-export function shouldSkipScrape(accountElement: Element): boolean {
-    // TODO: If there are some types of accounts on the page that can't be
-    //  scraped, return true for those here and they will be skipped.
-    return false;
 }
 
 export function getAccountNumber(
