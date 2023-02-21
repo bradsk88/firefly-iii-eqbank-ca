@@ -19,6 +19,13 @@ This project exists as an alternative to the cloud-based banking APIs (E.g.
 plaid) in order to maximize privacy by keeping your banking data out of the 
 hands of third parties.
 
+## Capabilities
+- Provides a template to scrape most banks by writing ~25 easy bits of code.
+- Includes a menu for logging in to Firefly III with Oauth 2
+- Integrates with the [Chrome Extension Hub](
+  https://github.com/bradsk88/firefly-iii-chrome-extension-hub) to streamline 
+  user experience.
+
 ## Motivation
 Here's the thing: 
 
@@ -31,10 +38,6 @@ With that in mind, providing a good, convenient way of exporting data (or, god
 forbid, an API) is extremely rare from banks.
 
 So, scraping data from websites via a Chrome Extension is an alternative.
-
-## Capabilities
-- Includes a menu for logging in to Firefly III with Oauth 2
-- Provides code examples for interacting with the Firefly III API
 
 ## Building your own extension
 Fork this repo and use it as a base for your extension. Implement the content 

@@ -1,5 +1,5 @@
 import {AccountRead} from "firefly-iii-typescript-sdk-fetch/dist/models/AccountRead";
-import {monthIndexes, parseDate} from "../../common/dates";
+import {monthIndexes} from "../../common/dates";
 import {priceFromString} from "../../common/prices";
 
 export function getButtonDestination(): Element {
