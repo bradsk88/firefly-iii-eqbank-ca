@@ -34,7 +34,7 @@ export function scrapeTransactionsFromPage(
         let srcId: string | undefined = undefined;
         let destId: string | undefined = pageAccount.id;
 
-        const amount = getRowAmount(r);
+        const amount = getRowAmount(r, pageAccount);
         if (amount < 0) {
             tType = TransactionTypeProperty.Withdrawal;
             srcId = pageAccount.id;
@@ -149,6 +149,7 @@ runOnContentChange(
 runOnContentChange(
     txPage,
     enableAutoRun,
+    // TODO: Change this to an element that is on the page once transactions have loaded
     () => document.querySelector('app-root')!,
     'txAutoRun',
 );
