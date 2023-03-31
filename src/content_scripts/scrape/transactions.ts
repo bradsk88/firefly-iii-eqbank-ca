@@ -24,7 +24,7 @@ export function isPageReadyForScraping(): boolean {
 }
 
 export function getRowElements(): Element[] {
-    const empty = document.querySelector('tr.empty-message');
+    const empty = document.querySelector('app-tab')!.querySelector('tr.empty-message');
     if (empty) {
         return [];
     }
