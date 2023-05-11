@@ -9,12 +9,17 @@ import {
     getAccountName,
     getAccountNumber,
     getButtonDestination,
-    getOpeningBalance, isPageReadyForScraping
+    getOpeningBalance,
+    isPageReadyForScraping,
+    knownAccountsWithoutNumbers
 } from "./scrape/accounts";
 import {openAccountForAutoRun} from "./auto_run/accounts";
 import {runOnURLMatch} from "../common/buttons";
 import {runOnContentChange} from "../common/autorun";
 import {debugLog} from "./auto_run/debug";
+import {TransactionStore, TransactionTypeProperty} from "firefly-iii-typescript-sdk-fetch";
+import {AccountRead} from "firefly-iii-typescript-sdk-fetch/dist/models/AccountRead";
+import {priceFromString} from "../common/prices";
 
 let pageAlreadyScraped = false;
 export let navigating = false;
@@ -61,6 +66,50 @@ async function scrapeAccountsFromPage(isAutoRun: boolean): Promise<AccountStore[
         () => {
         }
     );
+    const listedAccts: AccountRead[] = await chrome.runtime.sendMessage({
+        action: "list_accounts",
+    });
+    for (let a of accounts) {
+        if (!Object.values(knownAccountsWithoutNumbers).includes(a.accountNumber!)) {
+            continue;
+        }
+        const account = listedAccts.find(l => l.attributes.type === ShortAccountTypeProperty.Asset && l.attributes.accountNumber === a.accountNumber);
+        if (!account) {
+            continue;
+        }
+
+        const change = priceFromString(a.openingBalance || "0") - priceFromString(account!.attributes.currentBalance || "0");
+        if (change === 0) {
+            continue;
+        }
+
+        const tType = change >= 0 ? TransactionTypeProperty.Deposit : TransactionTypeProperty.Withdrawal;
+        const sourceId = change < 0 ? account.id : undefined;
+        const destId = change > 0 ? account.id : undefined;
+
+        if ((!sourceId) && (!destId)) {
+            throw new Error("Could not find index ")
+        }
+
+        const tx: TransactionStore[] = [{
+            errorIfDuplicateHash: false,
+            transactions: [{
+                amount: `${change}`,
+                date: new Date(),
+                type: tType,
+                description: 'Balance update',
+                destinationId: destId,
+                sourceId: sourceId
+            }],
+        }];
+        chrome.runtime.sendMessage({
+                action: "store_transactions",
+                is_auto_run: isAutoRun,
+                value: tx,
+            },
+            () => {
+            })
+    }
     return accounts;
 }
 

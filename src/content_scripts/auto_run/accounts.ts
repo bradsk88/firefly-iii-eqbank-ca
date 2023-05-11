@@ -1,8 +1,18 @@
 import {AutoRunState} from "../../background/auto_state";
-import {getAccountElements, getAccountName, shouldSkipScrape} from "../scrape/accounts";
+import {
+    getAccountElements,
+    getAccountName,
+    getAccountNumber,
+    getOpeningBalance, knownAccountsWithoutNumbers,
+    shouldSkipScrape
+} from "../scrape/accounts";
 import {debugAutoRun, isSingleAccountBank} from "../../extensionid";
 import {debugHighlight, showDebug} from "./debug";
 import {navigating, setNavigating} from "../accounts";
+import {AccountRead} from "firefly-iii-typescript-sdk-fetch/dist/models/AccountRead";
+import {TransactionStore, TransactionTypeProperty} from "firefly-iii-typescript-sdk-fetch";
+import {OpeningBalance} from "../../background/firefly_export";
+import {priceFromString} from "../../common/prices";
 
 function findNextAccountElement(accountName: string): Element | undefined {
     // You probably shouldn't need to modify the function.
@@ -36,6 +46,27 @@ function navigateToAccount(
         (accountElement as HTMLElement)?.click()
         setNavigating();
     }
+}
+
+async function scrapeSpecialAccount(accountElement: Element, autoRun: boolean) {
+    const accounts: AccountRead[] = await chrome.runtime.sendMessage({
+        action: "list_accounts",
+    });
+    const num = getAccountNumber(accountElement);
+    const account = accounts.find(a => a.attributes.accountNumber = num);
+    const curAmount: OpeningBalance = getOpeningBalance(accountElement)!;
+    const change = curAmount.balance - priceFromString(account!.attributes.currentBalance!);
+    const tType = change >= 0 ? TransactionTypeProperty.Deposit : TransactionTypeProperty.Withdrawal;
+    const tx: TransactionStore[] = [{
+        errorIfDuplicateHash: false,
+        transactions: [{
+            amount: `${change}`,
+            date: new Date(),
+            type: tType,
+            description: 'Balance update',
+        }],
+    }];
+
 }
 
 export function openAccountForAutoRun() {

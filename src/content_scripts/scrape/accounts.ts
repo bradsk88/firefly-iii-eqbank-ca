@@ -13,7 +13,7 @@ function expandAll(): void {
 }
 
 
-const knownAccountsWithoutNumbers: {[key: string]: string} = {
+export const knownAccountsWithoutNumbers: {[key: string]: string} = {
     'TFSA GICs': 'tfsa_all_gics',
     'TFSA Savings Account': 'tfsa_savings',
 }
