@@ -20,6 +20,7 @@ import {debugLog} from "./auto_run/debug";
 import {TransactionStore, TransactionTypeProperty} from "firefly-iii-typescript-sdk-fetch";
 import {AccountRead} from "firefly-iii-typescript-sdk-fetch/dist/models/AccountRead";
 import {priceFromString} from "../common/prices";
+import {extensionBankName} from "../extensionid";
 
 let pageAlreadyScraped = false;
 export let navigating = false;
@@ -46,7 +47,7 @@ async function scrapeAccountsFromPage(isAutoRun: boolean): Promise<AccountStore[
             openingBalanceBalance = `${openingBalance.balance}`;
         }
         const as: AccountStore = {
-            name: accountName,
+            name: `${extensionBankName} - ${accountName}`,
             accountNumber: accountNumber,
             openingBalance: openingBalanceBalance,
             openingBalanceDate: openingBalance?.date,
